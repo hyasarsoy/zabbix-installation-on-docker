@@ -1,0 +1,100 @@
+# Use root/example as user/password credentials
+version: '3.8'
+services:
+
+  zabbix-server:
+    image: zabbix/zabbix-server-mysql:ubuntu-6.4-latest
+    container_name: zabbix-server
+    restart: always
+    depends_on:
+      - zabbix-db
+      - zabbix-snmptraps
+    ports:
+      - 10051:10051
+    env_file: .env
+    volumes:
+      - mibs:/var/lib/zabbix/mibs
+      - snmptraps:/var/lib/zabbix/snmptraps
+    environment:
+      - TZ=$TIMEZONE
+      - DB_SERVER_HOST=dbHost-IpAddress
+      - MYSQL_USER=$ZABBIX_DB_USER
+      - MYSQL_PASSWORD=$ZABBIX_DB_PASS
+      - MYSQL_DATABASE=$ZABBIX_DB_NAME
+      - ZBX_TIMEOUT=30
+      - ZBX_STARTPOLLERSUNREACHABLE=10
+      - ZBX_STARTPINGERS=10
+      - ZBX_CACHESIZE=32M
+      - ZBX_STARTREPORTWRITERS=10
+      - ZBX_WEBSERVICEURL=http://zabbix-web-service:10053/report
+      - ZBX_VALUECACHESIZE=16M
+      - ZBX_ENABLE_SNMP_TRAPS=true
+
+
+  zabbix-web:
+    image: zabbix/zabbix-web-apache-mysql:centos-6.4-latest
+    container_name: zabbix-web
+    restart: always
+    depends_on:
+      - zabbix-db
+      - zabbix-server
+    ports:
+      - 8080:8080
+      - 8443:8443
+    env_file: .env
+    environment:
+      - TZ=$TIMEZONE
+      - ZBX_SERVER_HOST=zabbix-server
+      - DB_SERVER_HOST=zabbix-db
+      - MYSQL_USER=$ZABBIX_DB_USER
+      - MYSQL_PASSWORD=$ZABBIX_DB_PASS
+      - MYSQL_DATABASE=$ZABBIX_DB_NAME
+      - PHP_TZ=$TIMEZONE
+      - ZBX_SERVER_NAME=zabbix-server
+
+  zabbix-web-service:
+    image: zabbix/zabbix-web-service:alpine-6.4-latest
+    container_name: zabbix-web-service
+    restart: always
+    depends_on:
+      - zabbix-server
+    env_file: .env
+    environment:
+      - TZ=$TIMEZONE
+      - ZBX_ALLOWEDIP=zabbix-server
+      - ZBX_TIMEOUT=20
+    cap_add:
+      - SYS_ADMIN
+
+  zabbix-snmptraps:
+    image: zabbix/zabbix-snmptraps:centos-6.4-latest
+    container_name: zabbix-snmptraps
+    restart: always
+    ports:
+      - 162:1162/udp
+    env_file: .env
+    environment:
+      - TZ=$TIMEZONE  #edit on .evn folders
+    volumes:
+      - mibs:/var/lib/zabbix/mibs
+      - snmptraps:/var/lib/zabbix/snmptraps
+ 
+volumes:
+  mysql-data:
+    driver_opts:
+      type: none
+      device: /home/docker/zabbix/mysql-data
+      o: bind
+
+  mibs:
+    driver_opts:
+      type: none
+      device: /home/docker/zabbix/mibs
+      o: bind
+
+  snmptraps:
+    driver_opts:
+      type: none
+      device: /home/docker/zabbix/snmptraps
+      o: bind
+
