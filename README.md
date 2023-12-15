@@ -1,1 +1,2 @@
-# zabbix_on_docker
+# Zabbix installation on Docker without complex file.
+
