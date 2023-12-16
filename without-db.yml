@@ -7,11 +7,10 @@ services:
     container_name: zabbix-server
     restart: always
     depends_on:
-      - zabbix-db
       - zabbix-snmptraps
     ports:
       - 10051:10051
-    env_file: .env_srv
+    env_file: .env
     volumes:
       - mibs:/var/lib/zabbix/mibs
       - snmptraps:/var/lib/zabbix/snmptraps
@@ -30,17 +29,15 @@ services:
       - ZBX_VALUECACHESIZE=16M
       - ZBX_ENABLE_SNMP_TRAPS=true
 
-
   zabbix-web:
     image: zabbix/zabbix-web-apache-mysql:ubuntu-6.4-latest
     container_name: zabbix-web
     restart: always
     depends_on:
-      - zabbix-db
       - zabbix-server
     ports:
-      - 8080:8080
-      - 8443:8443
+      - 80:8080
+      - 443:8443
     env_file: .env
     environment:
       - TZ=$TIMEZONE
@@ -52,8 +49,20 @@ services:
       - PHP_TZ=$TIMEZONE
       - ZBX_SERVER_NAME=zabbix-server
 
+  zabbix-agent:
+    image: abbix/zabbix-agent2:ubuntu-6.4-latest
+    container_name: zabbix-web
+    restart: always
+    privileged: true
+    depends_on:
+      - zabbix-server
+    env_file: .env
+    environment:
+      - TZ=$TIMEZONE
+
+
   zabbix-web-service:
-    image: zabbix/zabbix-web-service:alpine-6.4-latest
+    image: zabbix/zabbix-web-service:ubuntu-6.4-latest
     container_name: zabbix-web-service
     restart: always
     depends_on:
@@ -74,18 +83,14 @@ services:
       - 162:1162/udp
     env_file: .env
     environment:
-      - TZ=$TIMEZONE  #edit on .evn folders
+      - TZ=$TIMEZONE  #change on .env file.
     volumes:
       - mibs:/var/lib/zabbix/mibs
       - snmptraps:/var/lib/zabbix/snmptraps
- 
-volumes:
-  mysql-data:
-    driver_opts:
-      type: none
-      device: /home/docker/zabbix/mysql-data
-      o: bind
 
+  
+ #create folders for vulemes and change paths
+volumes:
   mibs:
     driver_opts:
       type: none
