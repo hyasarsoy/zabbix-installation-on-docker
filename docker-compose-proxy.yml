@@ -1,0 +1,13 @@
+# Use root/example as user/password credentials
+version: '3.8'
+services:
+
+  zabbix-proxy:
+    image: zabbix/zabbix-proxy-sqlite3:ubuntu-6.4-latest
+    container_name: zabbix-proxy
+    restart: always
+    ports:
+      - 10051:10051
+    env_file: .env_prx
+    environment:
+      - TZ=$TIMEZONE
