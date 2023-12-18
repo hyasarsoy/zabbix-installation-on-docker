@@ -51,7 +51,7 @@ services:
 
   zabbix-agent:
     image: abbix/zabbix-agent2:ubuntu-6.4-latest
-    container_name: zabbix-web
+    container_name: zabbix-agent
     restart: always
     privileged: true
     depends_on:
